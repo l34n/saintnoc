@@ -13,7 +13,7 @@
   },
   "routes": [
     {
-      "pattern": "saintnoc.org",
+      "pattern": "recap.saintnoc.org",
       "custom_domain": true
     }
   ]
