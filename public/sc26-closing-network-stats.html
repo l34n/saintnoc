@@ -146,7 +146,7 @@ body.mouse #navbtns { opacity:1; }
   <div class="big">The network,<br><span>by the numbers</span></div>
   <div class="line">Three days of SAINTCON on the wire and in the air.</div>
   <div class="credit">Network by<b>Arista</b>Internet by<b>Centracom</b></div>
-  <video class="skippy" data-clip="smug_idle" style="right:150px; bottom:40px; height:700px" muted loop playsinline></video>
+  <video autoplay class="skippy" data-clip="smug_idle" style="right:150px; bottom:40px; height:700px" muted loop playsinline></video>
 </section>
 
 <!-- 2 GHOST -->
@@ -160,7 +160,7 @@ body.mouse #navbtns { opacity:1; }
     <div class="step panel"><b>Found it</b>Asked the network who owns our public IP. <em>Two machines answered.</em> A forgotten firewall upstream had our address.</div>
     <div class="step panel"><b>Fix</b>New IP at <em>1:31 PM</em>. The next two windows: <em class="c-cyan">clean</em>. Then a permanent alarm on it.</div>
   </div>
-  <video class="skippy" data-clip="outraged_shouting" style="right:70px; top:300px; height:290px" muted loop playsinline></video>
+  <video autoplay class="skippy" data-clip="outraged_shouting" style="right:70px; top:300px; height:290px" muted loop playsinline></video>
   <div class="src">source: ping logger + SNMP + ARP capture, Oct 24</div>
 </section>
 
@@ -271,7 +271,7 @@ body.mouse #navbtns { opacity:1; }
 
 <!-- MAP VIDEO -->
 <section class="slide" id="s-map" style="padding:0" data-notes="The venue map we built for the team, in tour mode: it flies itself around all three floors, every switch, access point and cable run, with links coloured by how full they are. When something drops it flies to it. This recording runs on the map's demo feed. The public version is on the kiosks. P pauses the video, R restarts it.">
-  <video id="map-video" muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0c1116"></video>
+  <video autoplay id="map-video" muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0c1116"></video>
   <div id="map-over" style="position:absolute;inset:0;pointer-events:none;transition:opacity 1.2s ease">
     <div style="position:absolute;left:0;right:0;top:0;height:300px;background:linear-gradient(#0c1116f8,#0c111600)"></div>
     <div style="position:absolute;left:80px;top:64px"><div class="eyebrow">What we built</div><h2>A live 3D map of the whole venue</h2></div>
@@ -322,7 +322,7 @@ body.mouse #navbtns { opacity:1; }
   <div style="font-family:var(--display);font-size:120px;line-height:1;margin-top:24px">Thank you</div>
   <div class="crew"><span>L34N</span><span>Pinball</span><span>KenpoSamurai</span><span>MiLwOrkZ</span><span>Gaming On The Floor</span><span>shifty</span><span>Arista</span><span class="bot">Skippy</span></div>
   <div class="line" style="margin-top:40px;font-size:28px;color:var(--cream-dim)">and <span style="color:var(--cream)">Centracom</span> for the 10 Gbps pipe.</div>
-  <video class="skippy" data-clip="fake_gracious_bow" style="right:160px; bottom:20px; height:760px" muted loop playsinline></video>
+  <video autoplay class="skippy" data-clip="fake_gracious_bow" style="right:160px; bottom:20px; height:760px" muted loop playsinline></video>
 </section>
 
 <div id="lightbox"><img></div>
@@ -364,7 +364,11 @@ function fit() {
   scale = Math.min(innerWidth/1920, innerHeight/1080);
   const x = (innerWidth - 1920 * scale) / 2;
   const y = (innerHeight - 1080 * scale) / 2;
-  stage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+  // zoom fits the stage without a transform, so muted videos can start on their own
+  stage.style.transform = 'none';
+  stage.style.zoom = scale;
+  stage.style.left = x + 'px';
+  stage.style.top = y + 'px';
   Q = Math.min(2.5, Math.max(1, (devicePixelRatio||1) * scale));
   drawStars();
   $$('canvas[data-hooked]').forEach(c => c._resize && c._resize());
@@ -757,9 +761,9 @@ const hooks = {};
     ready = fetch('vid-map.mp4').then(r => { if (!r.ok) throw new Error(String(r.status)); return r.blob(); }).then(b => { v.src = URL.createObjectURL(b); return true; }).catch(() => false); return ready; }
   setTimeout(load, 1500);
   hooks['s-map'] = {
-    enter(){ over.style.opacity = 1; clearTimeout(tm); tm = setTimeout(() => over.style.opacity = 0, 6000); load().then(ok => { if (ok) { v.currentTime = 0; v.play().catch(()=>{}); } }); },
+    enter(){ over.style.opacity = 1; clearTimeout(tm); tm = setTimeout(() => over.style.opacity = 0, 6000); load().then(ok => { if (ok) playFromStart(v); }); },
     leave(){ v.pause(); clearTimeout(tm); },
-    toggle(){ if (v.paused) v.play(); else v.pause(); }, restart(){ v.currentTime = 0; v.play(); over.style.opacity = 1; clearTimeout(tm); tm = setTimeout(() => over.style.opacity = 0, 6000); },
+    toggle(){ if (v.paused) v.play(); else v.pause(); }, restart(){ playFromStart(v); over.style.opacity = 1; clearTimeout(tm); tm = setTimeout(() => over.style.opacity = 0, 6000); },
   };
 })();
 
@@ -778,12 +782,19 @@ $$('.shot').forEach(im => im.onclick = e => { e.stopPropagation(); $('img', lb).
 lb.onclick = () => lb.classList.remove('show');
 
 // ---------- navigation ----------
+function playFromStart(v) {
+  if (!v) return;
+  v.muted = true; v.autoplay = true; v.playsInline = true;
+  const start = () => { try { v.currentTime = 0; } catch (e) {} const p = v.play(); if (p) p.catch(() => {}); };
+  if (v.readyState >= 1) start();
+  else v.addEventListener('loadedmetadata', start, { once: true });
+}
 function go(n) {
   n = Math.max(0, Math.min(slides.length - 1, n)); if (n === cur) return;
   if (cur >= 0) { slides[cur].classList.remove('on'); hooks[slides[cur].id]?.leave?.(); $$('video', slides[cur]).forEach(v => v.pause()); }
   cur = n; const s = slides[cur]; s.classList.add('on');
   stage.classList.toggle('bare', s.id === 's-map');
-  $$('video.skippy', s).forEach(v => { v.currentTime = 0; v.play().catch(()=>{}); });
+  $$('video.skippy', s).forEach(v => playFromStart(v));
   hooks[s.id]?.enter?.();
   $('#bar').style.width = ((cur+1)/slides.length*100) + '%';
   $('#num').textContent = String(cur+1).padStart(2,'0') + ' / ' + String(slides.length).padStart(2,'0');
