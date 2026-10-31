@@ -2,14 +2,27 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "saintnoc",
   "compatibility_date": "2026-10-30",
+  "main": "worker.js",
   "observability": {
     "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
     "traces": {
-      "enabled": true
+      "enabled": true,
+      "persist": true,
+      "head_sampling_rate": 1
     }
   },
   "assets": {
-    "directory": "./public"
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none"
   },
   "routes": [
     {
